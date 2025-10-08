@@ -8,31 +8,12 @@ from recsysconfident.data_handling.datasets.csv_reader import CsvReader
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
 from recsysconfident.data_handling.datasets.jester_joke_reader import JesterJokeReader
 from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensReader
-from recsysconfident.ml.models.constrained_confidence.gnn import get_gnn_constrained_model_and_dataloader
-from recsysconfident.ml.models.constrained_confidence.gnn_mf import get_gnn_mf_constrained_model_and_dataloader
-from recsysconfident.ml.models.constrained_confidence.mf import get_mf_constrained_model_and_dataloader
-from recsysconfident.ml.models.constrained_confidence.mf_clustering import \
-    get_mf_cluster_constrained_model_and_dataloader
-from recsysconfident.ml.models.constrained_confidence.mf_non_reg import \
-    get_mf_not_reg_conf_constrained_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.cp_gat import get_cpgat_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.cp_ordrec_gat import get_cpordrecgat_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.gaussian_conf_mf import get_gaussian_conf_mf_model_and_dataloader
+
 from recsysconfident.ml.models.learn_rank.cp_gat_bpr import get_learn_rank_cpgatbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.cp_mf_bpr import get_learn_rank_cpmfbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.dgat_bpr import get_learn_rank_dgatbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_learn_rank_mf_not_reg_and_dl
-from recsysconfident.ml.models.simple_confidence.att_model import get_att_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.cbpmf import get_cbpmf_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.cp_mf import get_cpmf_model_and_dataloader
-from recsysconfident.ml.models.simple_confidence.gnn import get_gnn_model_and_dataloader
-from recsysconfident.ml.models.simple_confidence.gnn_mf import get_gnn_mf_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.lbd import get_lbd_model_and_dataloader
-from recsysconfident.ml.models.simple_confidence.mf import get_mf_model_and_dataloader
-from recsysconfident.ml.models.simple_confidence.mf_clustering import get_mf_cluster_model_and_dataloader
-from recsysconfident.ml.models.simple_confidence.mf_non_reg import get_mf_non_reg_model_and_dataloader
-from recsysconfident.ml.models.distribution_based.ord_rec_mf import get_ordrec_model_and_dataloader
 
 
 class Environment:
@@ -105,24 +86,6 @@ class Environment:
         }
 
         self.model_name_fn = {
-            "cpordrecgat": get_cpordrecgat_model_and_dataloader,
-            "cpgat": get_cpgat_model_and_dataloader,
-            "gaussian-conf-mf": get_gaussian_conf_mf_model_and_dataloader,
-            "ordrec": get_ordrec_model_and_dataloader,
-            "cbpmf": get_cbpmf_model_and_dataloader,
-            "lbd": get_lbd_model_and_dataloader,
-            "cpmf": get_cpmf_model_and_dataloader,
-            "mf": get_mf_model_and_dataloader,
-            "mf-cluster": get_mf_cluster_model_and_dataloader,
-            "gnn-mf": get_gnn_mf_model_and_dataloader,
-            "gnn": get_gnn_model_and_dataloader,
-            "mf-not-reg": get_mf_non_reg_model_and_dataloader,
-            "att": get_att_model_and_dataloader,
-            "mf-not-reg-constrained": get_mf_not_reg_conf_constrained_model_and_dataloader,
-            "gnn-constrained": get_gnn_constrained_model_and_dataloader,
-            "mf-constrained": get_mf_constrained_model_and_dataloader,
-            "mf-cluster-constrained": get_mf_cluster_constrained_model_and_dataloader,
-            "gnn-mf-constrained": get_gnn_mf_constrained_model_and_dataloader,
             "learn-rank-att-cluster": get_learn_rank_att_cluster_and_dl,
             "learn-rank-mf": get_learn_rank_mf_not_reg_and_dl,
             "learn-rank-cpgatbpr": get_learn_rank_cpgatbpr_model_and_dataloader,

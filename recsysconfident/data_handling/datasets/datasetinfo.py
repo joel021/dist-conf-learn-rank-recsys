@@ -14,7 +14,7 @@ from recsysconfident.utils.datasets import filter_positives
 class DatasetInfo:
 
     def __init__(self, user_col: str, item_col: str, rating_col: str, interactions_file: str, columns: list,
-                 rate_range: list[float], database_name: str, split_run_uri: str, sep: str= ",", has_head: bool=False, timestamp_col: str = None,
+                 rate_range: list[float], database_name: str, split_run_uri: str, metadata_columns: list[str], sep: str= ",", has_head: bool=False, timestamp_col: str = None,
                  batch_size: int=1024, root_uri: str= "./"):
 
         self.fit_df = None
@@ -24,6 +24,7 @@ class DatasetInfo:
         self.n_users = 0
         self.n_items = 0
         self.rate_range = rate_range
+        self.metadata_columns = metadata_columns
 
         self.user_col = user_col
         self.item_col = item_col
@@ -111,9 +112,19 @@ class DatasetInfo:
         return self.fit_df is not None and self.val_df is not None and self.test_df is not None
 
     def get_user_item_sets(self, df: DataFrame) -> dict:
-        user_item_dict = (
-            df.groupby(self.user_col)
-            .apply(lambda x: (set(x[self.item_col].tolist()), x[self.relevance_col].tolist()))
-            .to_dict()
-        )
+
+        if self.metadata_columns:
+            user_item_dict = (
+                df.groupby(self.user_col)
+                .apply(lambda x: (set(x[self.item_col].tolist()), x[self.relevance_col].tolist()))
+                .to_dict()
+            )
+            self.items_df = df[[self.item_col] + self.metadata_columns].drop_duplicates().set_index(self.item_col)
+        else:
+            user_item_dict = (
+                df.groupby(self.user_col)
+                .apply(lambda x: (set(x[self.item_col].tolist()), x[self.relevance_col].tolist()))
+                .to_dict()
+            )
+
         return user_item_dict
