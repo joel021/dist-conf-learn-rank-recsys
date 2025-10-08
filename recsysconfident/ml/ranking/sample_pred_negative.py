@@ -46,19 +46,15 @@ class SamplePredNegatives:
         """
         Generate a list of candidate items for each user: positives + negatives
         """
-        user_candidate_sets = defaultdict(tuple)
+        user_candidate_sets = defaultdict(list)
 
         all_items = set(range(0, n_items))
 
         for user, pos_items_labels in items_per_users.items():
-            pos_items, X, labels = pos_items_labels
+            pos_items, labels = pos_items_labels
             neg_items = list(all_items - pos_items)
-            idxs = list(range(len(neg_items)))
-            sampled_idxs = list(np.random.choice(idxs, size=min(num_negatives, len(neg_items)), replace=False))
+            sampled_neg_items = np.random.choice(neg_items, size=min(num_negatives, len(neg_items)), replace=False)
 
-            if X:
-                user_candidate_sets[user] = (np.array(neg_items)[sampled_idxs], X[sampled_idxs])
-            else:
-                user_candidate_sets[user] = (np.array(neg_items), None)
+            user_candidate_sets[user] = list(sampled_neg_items)
 
         return user_candidate_sets

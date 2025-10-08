@@ -14,13 +14,10 @@ def predict(model: TorchModel, data_loader, device: str = 'cpu'):
     with torch.no_grad():
         for data in data_loader:
 
-            if len(data) == 3:
-                users_ids, items_ids, relevance = data
-            else:
-                users_ids, items_ids, X, relevance = data
+            users_ids, items_ids, relevance = data
 
             relevance = relevance.to(device)
-            output, mconfs = model.predict(data)
+            output, mconfs = model.predict((users_ids, items_ids))
             pred_confs = torch.cat((pred_confs, mconfs), dim=0)
 
             y_pred = torch.cat((y_pred, output), dim=0)
