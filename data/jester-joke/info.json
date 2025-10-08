@@ -1,0 +1,8 @@
+{
+  "user_col": "userId",
+  "item_col": "itemId",
+  "rating_col": "rating",
+  "columns": ["userId", "movieId", "rating"],
+  "interactions_file": "jester-data.csv",
+  "rate_range": [-10, 10]
+}

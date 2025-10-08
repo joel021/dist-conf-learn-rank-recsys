@@ -1,0 +1,7 @@
+services:
+  redis:
+    image: redis:7.2
+    container_name: REDIS_SERVICE
+    restart: always
+    ports:
+      - ${REDIS_PORT}:6379

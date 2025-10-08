@@ -1,0 +1,68 @@
+{
+  "ml-1m-learn-rank-cpgatbpr": {
+    "database_name": "ml-1m",
+    "model_name": "learn-rank-cpgatbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "amazon-beauty-learn-rank-cpgatbpr": {
+    "database_name": "amazon-beauty",
+    "model_name": "learn-rank-cpgatbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "jester-joke-learn-rank-cpgatbpr": {
+    "database_name": "jester-joke",
+    "model_name": "learn-rank-cpgatbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "rotten-tomatoes-learn-rank-cpgatbpr": {
+    "database_name": "rotten-tomatoes",
+    "model_name": "learn-rank-cpgatbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+
+   "ml-1m-learn-rank-cpmfbpr": {
+    "database_name": "ml-1m",
+    "model_name": "learn-rank-cpmfbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "amazon-beauty-learn-rank-cpmfbpr": {
+    "database_name": "amazon-beauty",
+    "model_name": "learn-rank-cpmfbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "jester-joke-learn-rank-cpmfbpr": {
+    "database_name": "jester-joke",
+    "model_name": "learn-rank-cpmfbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  },
+  "rotten-tomatoes-learn-rank-cpmfbpr": {
+    "database_name": "rotten-tomatoes",
+    "model_name": "learn-rank-cpmfbpr",
+    "conf_calibration": false,
+    "batch_size": 8192,
+    "min_inter_per_user": 100,
+    "learn_to_rank": true
+  }
+
+}

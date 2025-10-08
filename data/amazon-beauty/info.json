@@ -1,0 +1,11 @@
+{
+  "user_col": "userId",
+  "item_col": "itemId",
+  "rating_col": "rating",
+  "timestamp_col": "timestamp",
+  "columns": ["userId", "itemId", "rating", "timestamp"],
+  "interactions_file": "ratings_Beauty.csv",
+  "sep": ",",
+  "has_head": false,
+  "rate_range": [1,5]
+}
