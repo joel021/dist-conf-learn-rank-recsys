@@ -1,0 +1,16 @@
+{
+  "user_col": "userId",
+  "item_col": "movieId",
+  "rating_col": "rating",
+  "timestamp_col": "timestamp",
+  "columns": ["userId", "movieId", "rating", "timestamp"],
+  "interactions_file": "ratings.csv",
+  "items_file": "items.csv",
+  "sep": ",",
+  "has_head": true,
+  "rate_range": [1, 5, 0.5],
+  "metadata_columns": ["Action", "Adventure", "Animation",
+       "Children", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+       "Film-Noir", "Horror", "IMAX", "Musical", "Mystery", "Romance",
+       "Sci-Fi", "Thriller", "War", "Western"]
+}

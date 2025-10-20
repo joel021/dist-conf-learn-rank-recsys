@@ -17,13 +17,11 @@ def sample_unseen_item(seen: tuple, num_items: int, max_tries: int=20) -> int:
             break
     return unseen_item_id
 
-def learn_to_rank_step(model: TorchModel, model_input):
-
-    users_ids, high_rank_items = model_input
+def learn_to_rank_step(model: TorchModel, users_ids, high_rank_items):
 
     low_rank_items_idx = get_low_rank_items(users_ids, model.items_per_user, model.n_items)
-    pos_scores = model(model_input)
-    neg_scores = model((users_ids, low_rank_items_idx.to(users_ids.device)))
+    pos_scores = model(users_ids, high_rank_items)
+    neg_scores = model(users_ids, low_rank_items_idx.to(users_ids.device))
 
     return pos_scores[:,0], neg_scores[:,0]
 
@@ -37,8 +35,8 @@ def get_low_rank_items(user_ids: torch.Tensor, items_per_user: dict, num_items: 
 
     return torch.tensor(neg_items_idxs)
 
-def bpr_loss(model, model_input):
-    p_s, n_s = learn_to_rank_step(model, model_input)
+def bpr_loss(model, user_ids, item_ids):
+    p_s, n_s = learn_to_rank_step(model, user_ids, item_ids)
 
     diff = p_s - n_s
     return -torch.log(torch.sigmoid(diff) + 1e-8).mean()

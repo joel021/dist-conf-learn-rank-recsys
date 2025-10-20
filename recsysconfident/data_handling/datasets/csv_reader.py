@@ -16,6 +16,13 @@ class CsvReader:
         else:
             return pd.read_csv(file_uri)
 
+    def read_items(self):
+
+        if self.info.items_file:
+            file_uri = f"{self.info.root_uri}/data/{self.info.database_name}/{self.info.items_file}"
+            return pd.read_csv(file_uri)
+        return None
+
     def read_with_dynamic_cols(self, ratings_uri: str):
 
         df = pd.read_csv(ratings_uri, header=None, sep=self.info.sep)
