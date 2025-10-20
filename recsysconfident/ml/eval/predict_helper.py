@@ -15,9 +15,9 @@ def predict(model: TorchModel, data_loader, device: str = 'cpu'):
         for data in data_loader:
 
             users_ids, items_ids, relevance = data
+            user_ids, item_ids, relevance = users_ids.to(device), items_ids.to(device), relevance.to(device)
 
-            relevance = relevance.to(device)
-            output, mconfs = model.predict((users_ids, items_ids))
+            output, mconfs = model.predict(user_ids, item_ids)
             pred_confs = torch.cat((pred_confs, mconfs), dim=0)
 
             y_pred = torch.cat((y_pred, output), dim=0)
