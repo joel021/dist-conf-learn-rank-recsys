@@ -12,6 +12,7 @@ from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensRe
 from recsysconfident.ml.models.learn_rank.cp_gat_bpr import get_learn_rank_cpgatbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.cp_mf_bpr import get_learn_rank_cpmfbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.dgat_bpr import get_learn_rank_dgatbpr_model_and_dataloader
+from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_learn_rank_mf_not_reg_and_dl
 
@@ -84,14 +85,16 @@ class Environment:
             "amazon-clothes-shoes-jewelry": AmazonProductsReader(self.dataset_info).read,
             "rotten-tomatoes": CsvReader(self.dataset_info).read,
             "ml-100k": MovieLensReader(self.dataset_info).read,
+            "netflix-prize": CsvReader(self.dataset_info).read
         }
 
         self.model_name_fn = {
-            "learn-rank-mf": get_learn_rank_mf_not_reg_and_dl,
+            "mf": get_learn_rank_mf_not_reg_and_dl,
             "learn-rank-cpgatbpr": get_learn_rank_cpgatbpr_model_and_dataloader,
             "learn-rank-dgatbpr": get_learn_rank_dgatbpr_model_and_dataloader,
             "learn-rank-cpmfbpr": get_learn_rank_cpmfbpr_model_and_dataloader,
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
+            "dnn": get_dnn_and_dl
         }
 
         if not self.database_name in self.database_name_fn:

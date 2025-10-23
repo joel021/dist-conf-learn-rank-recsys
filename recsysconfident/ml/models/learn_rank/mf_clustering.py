@@ -22,7 +22,7 @@ def get_learn_rank_att_cluster_and_dl(info: DatasetInfo):
 
     model = ATTCluster(n_users = info.n_users,
                        n_items = info.n_items,
-                       emb_dim = 64,
+                       emb_dim = 128,
                        items = x,
                        x_size = x_size,
                        items_per_user = info.items_per_user)
@@ -35,15 +35,19 @@ class ATTCluster(TorchModel):
         super(ATTCluster, self).__init__(items_per_user, items, n_items)
 
         self.emb_dim = emb_dim
+        self.n_items = n_items
 
         # User and Item Embeddings
-        self.u_emb = nn.Embedding(n_users+1, emb_dim)  # User Latent Factors (stack multiple in channels)
-        self.i_emb = nn.Embedding(n_items+1, emb_dim)  # Item Latent Factors
-        self.u_bias = nn.Embedding(n_users+1, 1)  # User Bias
-        self.i_bias = nn.Embedding(n_items+1, 1)  # Item Bias
+        self.u_emb = nn.Embedding(n_users, emb_dim)  # User Latent Factors (stack multiple in channels)
+        self.i_emb = nn.Embedding(n_items + 1, emb_dim)  # Item Latent Factors
+        self.u_bias = nn.Embedding(n_users, 1)  # User Bias
+        self.i_bias = nn.Embedding(n_items + 1, 1)  # Item Bias
         self.global_bias = nn.Parameter(torch.tensor(0.0))  # Global Bias
-        self.w_x = nn.Linear(x_size, emb_dim)
-        self.w_combined = nn.Linear(emb_dim, 1)
+        self.w_u = nn.Linear(emb_dim, emb_dim)
+        self.w_i = nn.Linear(emb_dim, emb_dim)
+        self.w_r = nn.Linear(emb_dim, 1)
+
+        self.dropout1 = nn.Dropout(p=0.25)
 
         # Initialize embeddings
         nn.init.xavier_uniform(self.u_emb.weight)
@@ -70,46 +74,48 @@ class ATTCluster(TorchModel):
         l1 += torch.sum(torch.abs(layer.bias))
         return l1
 
-    def self_cluster(self, x, idx):
+    def conf_cluster(self, emb_weight, W_emb, idx):
+        #W_emb, shape: (emb_dim, emb_dim)
+        emb_weight = W_emb(emb_weight)
+        norm_embeddings = F.normalize(emb_weight, p=2, dim=1)  # Shape: (n_entities, emb_dim)
+        sim_matrix = torch.matmul(norm_embeddings[idx], norm_embeddings.T)  # Shape: (batch_size, n_entities)
+        similarity = F.softmax(sim_matrix, dim=1)  # Shape: (batch_size, n_entities)
+        att_embeddings = torch.matmul(similarity, emb_weight)  # Shape: (batch_size, emb_dim)
 
-        x_norm = F.normalize(x, p=2, dim=1)
-        #sim_emb: (batch_size, emb_dim)
-        sim_matrix = torch.matmul(x_norm[idx], x_norm.T)  # Shape: (batch_size, n_entities)
-        sim_matrix[sim_matrix == 1] = 0 #remove self weights
-        similarity = F.sigmoid(sim_matrix)  # Shape: (batch_size, n_entities)
-        sim_emb = torch.matmul(similarity, x) # Shape: (batch_size, emb_dim)
-        return sim_emb
+        entropy = -(similarity * torch.log(similarity + 1e-8)).sum(dim=1)
+        confidence = 1 - entropy / math.log(similarity.size(1))
 
-    def cross_cluster(self, e_embedding, x_meta, idx):
+        return att_embeddings, confidence
 
-        x_meta_norm = F.normalize(x_meta, p=2, dim=1)
-        e_embedding_norm = F.normalize(e_embedding, p=2, dim=1)
+    def cross_cluster(self, e1_emb, e2_emb, idx1):
 
-        sim_matrix = torch.matmul(e_embedding_norm[idx], x_meta_norm.T) #(batch_size, n_entities)
-        sim_matrix[sim_matrix == 1] = 0
+        x_meta_norm = F.normalize(e2_emb, p=2, dim=1)
+        e_embedding_norm = F.normalize(e1_emb, p=2, dim=1)
+
+        sim_matrix = torch.matmul(e_embedding_norm[idx1], x_meta_norm.T) #(batch_size, n_entities)
         attn_weights = torch.softmax(sim_matrix, dim=1)
-        sim_emb = torch.matmul(attn_weights, x_meta)  # Shape: (batch_size, emb_dim)
+        sim_emb = torch.matmul(attn_weights, e2_emb)  # Shape: (batch_size, emb_dim)
 
         return sim_emb
 
-    def forward(self, u_idx, i_idx):
+    def forward(self, users, items):
 
-        device = self.u_emb.weight.device
-        x = self.items.to(device)
-
-        user_embedding = self.u_emb(u_idx)
-        item_embedding = self.i_emb(i_idx)
+        user_embedding = self.u_emb(users)
+        item_embedding = self.i_emb(items)
+        user_bias = self.u_bias(users)
+        item_bias = self.i_bias(items)
 
         emb_product = user_embedding * item_embedding
 
-        x = torch.relu(self.w_x(x))
-        u_cluster = self.self_cluster(self.i_emb.weight, i_idx)
-        i_cluster = self.self_cluster(self.u_emb.weight, u_idx)
+        u_x, c_u = self.learned_cluster(self.u_emb.weight, self.w_u, users)
+        i_x, c_i = self.learned_cluster(self.i_emb.weight, self.w_i, items)
 
-        combined = u_cluster * i_cluster
-        pred = self.w_combined(combined)
+        c_ui = torch.sqrt(c_u * c_i).squeeze()
+        x = self.w_r(u_x + i_x + emb_product)
 
-        return torch.stack([pred, torch.zeros_like(pred)], dim=1)
+        pred = (x.squeeze() + user_bias.squeeze() + item_bias.squeeze() + self.global_bias).squeeze()
+
+        return torch.stack([pred, c_ui], dim=1)
 
     def predict(self, users_ids, items_ids):
         scores = self.forward(users_ids, items_ids)

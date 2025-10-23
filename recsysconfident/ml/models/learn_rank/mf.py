@@ -53,22 +53,20 @@ class MFNonRegularizedModel(TorchModel):
 
         return torch.stack([prediction.squeeze(), torch.zeros_like(prediction)], dim=1)
 
-    def regularization(self):
-        return 0
+    def predict(self, users_ids, items_ids):
+        scores = self.forward(users_ids, items_ids)
+        return scores[:, 0], scores[:, 0]
 
-    def predict(self, user_ids, item_ids):
-
-        scores = self.forward(user_ids, item_ids)
-        return scores[:,0], scores[:,1]
-
-    def loss(self, user_ids, item_ids, labels, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
-        loss = bpr_loss(self, user_ids, item_ids)
+        loss = bpr_loss(self, user_ids, item_ids) + self.regularization() * 0.0001
         loss.backward()
         optimizer.step()
         return loss
 
-    def eval_loss(self, user_ids, item_ids, labels):
-
+    def eval_loss(self, user_ids, item_ids):
         loss = bpr_loss(self, user_ids, item_ids)
         return loss
+
+    def regularization(self):
+        return 0
