@@ -47,7 +47,7 @@ class ATTCluster(TorchModel):
         self.w_i = nn.Linear(emb_dim, emb_dim)
         self.w_r = nn.Linear(emb_dim, 1)
 
-        self.dropout1 = nn.Dropout(p=0.25)
+        self.dropout = nn.Dropout(p=0.5)
 
         # Initialize embeddings
         nn.init.xavier_uniform(self.u_emb.weight)
@@ -111,7 +111,8 @@ class ATTCluster(TorchModel):
         i_x, c_i = self.learned_cluster(self.i_emb.weight, self.w_i, items)
 
         c_ui = torch.sqrt(c_u * c_i).squeeze()
-        x = self.w_r(u_x + i_x + emb_product)
+        x = self.dropout(torch.concat([u_x, i_x, emb_product], dim=1))
+        x = self.w_r(x) #before: u_x + i_x + emb_product
 
         pred = (x.squeeze() + user_bias.squeeze() + item_bias.squeeze() + self.global_bias).squeeze()
 
