@@ -8,8 +8,8 @@ from recsysconfident.data_handling.datasets.csv_reader import CsvReader
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
 from recsysconfident.data_handling.datasets.jester_joke_reader import JesterJokeReader
 from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensReader
+from recsysconfident.ml.models.learn_rank.ua_gat import get_uagat_model_and_dataloader
 
-from recsysconfident.ml.models.learn_rank.cp_gat_bpr import get_learn_rank_cpgatbpr_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.ua_mf import get_uamf_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.dgat import get_dgat_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
@@ -90,7 +90,7 @@ class Environment:
         self.model_name_fn = {
             "mf": get_mf_model_and_dl,
             "dgat": get_dgat_model_and_dataloader,
-            "uagat": get_learn_rank_cpgatbpr_model_and_dataloader,
+            "uagat": get_uagat_model_and_dataloader,
             "uamf": get_uamf_model_and_dataloader,
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
             "dnn": get_dnn_and_dl
