@@ -82,22 +82,32 @@ class Environment:
             "amazon-clothing": AmazonProductsReader(self.dataset_info).read,
             "amazon-beauty": AmazonProductsReader(self.dataset_info).read,
             "amazon-clothes-shoes-jewelry": AmazonProductsReader(self.dataset_info).read,
-            "rotten-tomatoes": CsvReader(self.dataset_info).read
+            "rotten-tomatoes": CsvReader(self.dataset_info).read,
+            "ml-100k": MovieLensReader(self.dataset_info).read,
         }
 
         self.model_name_fn = {
-            "learn-rank-att-cluster": get_learn_rank_att_cluster_and_dl,
             "learn-rank-mf": get_learn_rank_mf_not_reg_and_dl,
             "learn-rank-cpgatbpr": get_learn_rank_cpgatbpr_model_and_dataloader,
             "learn-rank-dgatbpr": get_learn_rank_dgatbpr_model_and_dataloader,
             "learn-rank-cpmfbpr": get_learn_rank_cpmfbpr_model_and_dataloader,
+            "mf-cluster": get_learn_rank_att_cluster_and_dl,
         }
 
         if not self.database_name in self.database_name_fn:
             raise FileNotFoundError(f"Database {self.database_name} does not exist.")
 
         ratings_df = self.database_name_fn[self.database_name]()
-        self.dataset_info.build(ratings_df, shuffle)
+        items_df = None
+        if self.dataset_info.metadata_columns:
+            items_df = CsvReader(self.dataset_info).read_items()
+
+            not_data_items = set(ratings_df[self.dataset_info.item_col].unique()) - set(
+                items_df[self.dataset_info.item_col].unique())
+            if len(not_data_items) > 0:
+                print(f"Warning: {len(not_data_items)} items in ratings are missing from items_df metadata.")
+
+        self.dataset_info.build(ratings_df, items_df, shuffle)
         print(f"Gathered dataset with {len(self.dataset_info.ratings_df)} interactions, {self.dataset_info.n_users} users"
               f" and {self.dataset_info.n_items} items.")
 

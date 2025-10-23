@@ -24,7 +24,7 @@ def get_learn_rank_mf_not_reg_and_dl(info: DatasetInfo):
 class MFNonRegularizedModel(TorchModel):
 
     def __init__(self, num_users, num_items, num_factors, items_per_user):
-        super(MFNonRegularizedModel, self).__init__(items_per_user)
+        super(MFNonRegularizedModel, self).__init__(items_per_user, None, num_items)
         self.n_items = num_items
         self.n_users = num_users
 

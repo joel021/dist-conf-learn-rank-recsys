@@ -34,10 +34,12 @@ def train_model(model: TorchModel, training_loader, validation_loader, environ: 
 
 def train_one_epoch(model, training_loader, optimizer, device):
     running_loss = 0.
-
+    model = model.to(device)
     for i, data in enumerate(training_loader):
 
-        loss = model.loss(data, optimizer)
+        users_ids, items_ids, labels = data
+        user_ids, item_ids, labels = users_ids.to(device), items_ids.to(device), labels.to(device)
+        loss = model.loss(user_ids, item_ids, optimizer)
 
         running_loss += loss.item()
 
@@ -45,11 +47,14 @@ def train_one_epoch(model, training_loader, optimizer, device):
 
 def run_val(model, validation_loader, device):
 
+    model = model.to(device)
     running_vloss = 0.0
     model.eval()
     with torch.no_grad():
         for data in validation_loader:
-            vloss = model.eval_loss(data)
+            users_ids, items_ids, labels = data
+            user_ids, item_ids, labels = users_ids.to(device), items_ids.to(device), labels.to(device)
+            vloss = model.eval_loss(user_ids, item_ids)
             running_vloss += vloss.item()
 
     avg_vloss = running_vloss / len(validation_loader)

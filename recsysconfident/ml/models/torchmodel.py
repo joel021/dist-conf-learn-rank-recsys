@@ -11,11 +11,11 @@ class TorchModel(nn.Module):
     def regularization(self):
         raise NotImplementedError("This method is not implemented yet")
 
-    def predict(self, data):
+    def predict(self, user_ids, item_ids):
         raise NotImplementedError("This method is not implemented yet")
 
-    def eval_loss(self, data):
+    def eval_loss(self, user_ids, item_ids):
         raise NotImplementedError("This method is not implemented yet")
 
-    def loss(self, data, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
         raise NotImplementedError("This method is not implemented yet")
