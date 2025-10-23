@@ -80,19 +80,18 @@ class Environment:
         self.database_name_fn = {
             "ml-1m": MovieLensReader(self.dataset_info).read,
             "jester-joke": JesterJokeReader(self.dataset_info, "ratings.csv").read,
-            "amazon-clothing": AmazonProductsReader(self.dataset_info).read,
             "amazon-beauty": AmazonProductsReader(self.dataset_info).read,
-            "amazon-clothes-shoes-jewelry": AmazonProductsReader(self.dataset_info).read,
             "rotten-tomatoes": CsvReader(self.dataset_info).read,
             "ml-100k": MovieLensReader(self.dataset_info).read,
-            "netflix-prize": CsvReader(self.dataset_info).read
+            "netflix-prize": CsvReader(self.dataset_info).read,
+            "amazon-movies-tv": AmazonProductsReader(self.dataset_info).read,
         }
 
         self.model_name_fn = {
             "mf": get_learn_rank_mf_not_reg_and_dl,
-            "learn-rank-cpgatbpr": get_learn_rank_cpgatbpr_model_and_dataloader,
-            "learn-rank-dgatbpr": get_learn_rank_dgatbpr_model_and_dataloader,
-            "learn-rank-cpmfbpr": get_learn_rank_cpmfbpr_model_and_dataloader,
+            "dgat": get_learn_rank_dgatbpr_model_and_dataloader,
+            "uagat": get_learn_rank_cpgatbpr_model_and_dataloader,
+            "uamf": get_learn_rank_cpmfbpr_model_and_dataloader,
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
             "dnn": get_dnn_and_dl
         }
