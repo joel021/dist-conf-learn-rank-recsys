@@ -7,11 +7,11 @@ from recsysconfident.ml.ranking.rank_helper import bpr_loss
 from recsysconfident.ml.models.torchmodel import TorchModel
 
 
-def get_learn_rank_mf_not_reg_and_dl(info: DatasetInfo):
+def get_mf_model_and_dl(info: DatasetInfo):
 
     fit_dataloader, eval_dataloader, test_dataloader = ui_ids_label(info)
 
-    model = MFNonRegularizedModel(
+    model = MF(
         num_users=info.n_users,
         num_items=info.n_items,
         num_factors=64,
@@ -21,10 +21,10 @@ def get_learn_rank_mf_not_reg_and_dl(info: DatasetInfo):
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
 
-class MFNonRegularizedModel(TorchModel):
+class MF(TorchModel):
 
     def __init__(self, num_users, num_items, num_factors, items_per_user):
-        super(MFNonRegularizedModel, self).__init__(items_per_user, None, num_items)
+        super(MF, self).__init__(items_per_user, None, num_items)
         self.n_items = num_items
         self.n_users = num_users
 
