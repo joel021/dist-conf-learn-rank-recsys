@@ -30,6 +30,10 @@ def main(setup: Setup, shuffle_train_split: bool = False):
     shuffle_train_split: whether shuffle the train split or use sorted by timestamp
     """
     print(setup.to_dict())
+    if setup_model_results_exists(setup.instance_dir) and not setup.reevaluate:
+        print("All results already obtained. Skip.")
+        return
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     environ = Environment(model_name=setup.model_name,
@@ -48,9 +52,6 @@ def main(setup: Setup, shuffle_train_split: bool = False):
 
         model = setup_fit(setup, model, fit_dl, val_dl, environ, device)
 
-    if setup_model_results_exists(setup.instance_dir) and not setup.reevaluate:
-        print("All results already obtained. Skip.")
-        return
 
     export_setup(environ, setup.to_dict())
     eval_df, test_df = export_elementwise_error(model, environ, device)

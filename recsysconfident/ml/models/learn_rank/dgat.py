@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.distributions as d
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv
 
@@ -10,11 +9,11 @@ from recsysconfident.ml.models.torchmodel import TorchModel
 from recsysconfident.ml.ranking.rank_helper import get_low_rank_items, bpr_loss
 
 
-def get_learn_rank_dgatbpr_model_and_dataloader(info: DatasetInfo):
+def get_dgat_model_and_dataloader(info: DatasetInfo):
 
     fit_dataloader, eval_dataloader, test_dataloader = ui_ids_label(info)
 
-    model = DGATBPR(
+    model = DGAT(
         items_per_user=info.items_per_user,
         n_users=info.n_users,
         n_items=info.n_items,
@@ -26,10 +25,10 @@ def get_learn_rank_dgatbpr_model_and_dataloader(info: DatasetInfo):
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
 
-class DGATBPR(TorchModel):
+class DGAT(TorchModel):
 
     def __init__(self, items_per_user, n_users, n_items, emb_dim, rmin: float, rmax: float):
-        super().__init__(items_per_user)
+        super().__init__(items_per_user, None, n_items)
 
         self.n_users = n_users
         self.n_items = n_items

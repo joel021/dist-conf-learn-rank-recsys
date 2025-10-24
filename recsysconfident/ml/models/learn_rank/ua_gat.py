@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.distributions as d
+import torch.nn.functional as F
+from torch_geometric.nn import GATConv
 
 from recsysconfident.data_handling.dataloader.int_ui_ids_dataloader import ui_ids_label
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
@@ -8,11 +10,11 @@ from recsysconfident.ml.models.torchmodel import TorchModel
 from recsysconfident.ml.ranking.rank_helper import get_low_rank_items
 
 
-def get_learn_rank_cpmfbpr_model_and_dataloader(info: DatasetInfo):
+def get_uagat_model_and_dataloader(info: DatasetInfo):
 
     fit_dataloader, eval_dataloader, test_dataloader = ui_ids_label(info)
 
-    model = CPMFBPR(
+    model = UAGAT(
         items_per_user=info.items_per_user,
         n_users=info.n_users,
         n_items=info.n_items,
@@ -24,10 +26,10 @@ def get_learn_rank_cpmfbpr_model_and_dataloader(info: DatasetInfo):
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
 
-class CPMFBPR(TorchModel):
+class UAGAT(TorchModel):
 
     def __init__(self, items_per_user, n_users, n_items, emb_dim, rmin: float, rmax: float):
-        super().__init__(items_per_user)
+        super().__init__(items_per_user, None, n_items)
 
         self.n_users = n_users
         self.n_items = n_items
@@ -36,17 +38,16 @@ class CPMFBPR(TorchModel):
         n_bins = int(2 * (rmax - rmin))
         self.delta_r = 1 / n_bins
 
-        self.user_factors = nn.Embedding(n_users, emb_dim)  # User Latent Factors (stack multiple in channels)
-        self.item_factors = nn.Embedding(n_items + 1, emb_dim)  # Item Latent Factors
-        self.user_bias = nn.Embedding(n_users, 1)  # User Bias
-        self.item_bias = nn.Embedding(n_items + 1, 1)  # Item Bias
-        self.global_bias = nn.Parameter(torch.tensor(0.0))  # Global Bias
+        self.ui_lookup = nn.Embedding(n_users + n_items, emb_dim)
 
-        # Initialize embeddings
-        nn.init.xavier_uniform(self.user_factors.weight)
-        nn.init.xavier_uniform(self.item_factors.weight)
-        nn.init.zeros_(self.user_bias.weight)
-        nn.init.zeros_(self.item_bias.weight)
+        self.ui_gat_layer = GATConv(in_channels=emb_dim,
+                                   out_channels=emb_dim,
+                                   heads=1,
+                                   concat=False
+                                   )
+        self.dropout = nn.Dropout(0.2)
+        self.fc1 = nn.Linear(2 * emb_dim, emb_dim)
+        self.fc2 = nn.Linear(emb_dim, 1)
 
         # Variance parameters (γ_u, γ_v), initialized to 1.0
         self.user_gamma = nn.Embedding(n_users, 1)
@@ -55,16 +56,21 @@ class CPMFBPR(TorchModel):
         nn.init.ones_(self.item_gamma.weight)
 
         self.alpha = nn.Parameter(torch.tensor(1.))
+        nn.init.xavier_uniform(self.ui_lookup.weight)
 
     def forward(self, users_ids, items_ids):
 
-        user_embedding = self.user_factors(users_ids)
-        item_embedding = self.item_factors(items_ids)
-        user_bias = self.user_bias(users_ids).squeeze()
-        item_bias = self.item_bias(items_ids).squeeze()
+        ui_edges = torch.stack([users_ids, items_ids + self.n_users]) #(batch,),(batch,) -> (2, batch)
 
-        dot_product = (user_embedding * item_embedding).sum(dim=1)  # Element-wise product, summed over latent factors
-        mean = dot_product + user_bias + item_bias + self.global_bias
+        ui_x = self.ui_lookup.weight
+        ui_graph_emb = self.ui_gat_layer(x=ui_x, edge_index=ui_edges)  # (max_u_id+1, emb_dim)
+
+        u_graph_emb = ui_graph_emb[ui_edges[0]]
+        i_graph_emb = ui_graph_emb[ui_edges[1]]
+
+        x = F.leaky_relu(self.fc1(torch.concat([u_graph_emb, i_graph_emb], dim=1)))
+        x = self.dropout(x)
+        mean = self.fc2(x).squeeze()
 
         # Softplus ensures γ > 0
         gamma_u = torch.clamp(self.user_gamma(users_ids), min=0.00001) #the article does not mention, but it does not work without.
