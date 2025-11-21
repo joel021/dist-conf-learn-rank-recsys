@@ -107,8 +107,8 @@ class ATTCluster(TorchModel):
 
         emb_product = user_embedding * item_embedding
 
-        u_x, c_u = self.learned_cluster(self.u_emb.weight, self.w_u, users)
-        i_x, c_i = self.learned_cluster(self.i_emb.weight, self.w_i, items)
+        u_x, c_u = self.conf_cluster(self.u_emb.weight, self.w_u, users)
+        i_x, c_i = self.conf_cluster(self.i_emb.weight, self.w_i, items)
 
         c_ui = torch.sqrt(c_u * c_i).squeeze()
         x = self.dropout(torch.concat([u_x, i_x, emb_product], dim=1))
