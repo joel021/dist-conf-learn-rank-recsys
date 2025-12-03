@@ -97,17 +97,17 @@ class UAGAT(TorchModel):
 
         # Compute mean and std of the difference distribution
         diff_mu = high_mu - low_mu
-        diff_sigma = torch.sqrt(high_sigma ** 2 + low_sigma ** 2)
+        module_sigma = torch.sqrt(high_sigma ** 2 + low_sigma ** 2)
 
         # CDF of difference being > 0 is 1 - CDF(0)
         standard_normal = d.Normal(0, 1)
-        prob = standard_normal.cdf(diff_mu / diff_sigma)
+        prob = standard_normal.cdf(diff_mu / module_sigma)
 
         nll = -torch.log(prob + 1e-8).mean()  # BPR loss = -log(P(s_h > s_l))
 
         return nll
 
-    def loss(self, user_ids, item_ids, labels, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
 
         nll = self.nll_bpr_loss(user_ids, item_ids)
@@ -115,7 +115,7 @@ class UAGAT(TorchModel):
         optimizer.step()
         return nll
 
-    def eval_loss(self, user_ids, item_ids, labels):
+    def eval_loss(self, user_ids, item_ids):
         nll = self.nll_bpr_loss(user_ids, item_ids)
         return nll
 

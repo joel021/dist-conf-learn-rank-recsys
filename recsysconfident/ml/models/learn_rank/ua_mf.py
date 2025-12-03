@@ -101,7 +101,7 @@ class UAMF(TorchModel):
 
         return nll
 
-    def loss(self, user_ids, item_ids, labels, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
 
         nll = self.nll_bpr_loss(user_ids, item_ids)
@@ -109,7 +109,7 @@ class UAMF(TorchModel):
         optimizer.step()
         return nll
 
-    def eval_loss(self, user_ids, item_ids, labels):
+    def eval_loss(self, user_ids, item_ids):
         nll = self.nll_bpr_loss(user_ids, item_ids)
         return nll
 

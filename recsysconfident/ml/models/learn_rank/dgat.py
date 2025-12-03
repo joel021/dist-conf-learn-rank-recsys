@@ -66,15 +66,14 @@ class DGAT(TorchModel):
 
         return mu
 
-    def loss(self, user_ids, item_ids, labels, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
-
-        loss = bpr_loss(self, user_ids, item_ids)
+        loss = bpr_loss(self, user_ids, item_ids) + self.regularization() * 0.0001
         loss.backward()
         optimizer.step()
         return loss
 
-    def eval_loss(self, user_ids, item_ids, labels):
+    def eval_loss(self, user_ids, item_ids):
         loss = bpr_loss(self, user_ids, item_ids)
         return loss
 
