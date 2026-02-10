@@ -15,23 +15,20 @@ def get_learn_rank_att_cluster_and_dl(info: DatasetInfo):
 
     if info.metadata_columns:
         x = torch.from_numpy(info.items_df[info.metadata_columns].values).float()
-        x_size = len(info.metadata_columns)
     else:
         x = None
-        x_size = 0
 
     model = ATTCluster(n_users = info.n_users,
                        n_items = info.n_items,
                        emb_dim = 128,
                        items = x,
-                       x_size = x_size,
                        items_per_user = info.items_per_user)
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
 
 class ATTCluster(TorchModel):
 
-    def __init__(self, n_users: int, n_items: int, emb_dim: int, items, x_size: int, items_per_user):
+    def __init__(self, n_users: int, n_items: int, emb_dim: int, items, items_per_user):
         super(ATTCluster, self).__init__(items_per_user, items, n_items)
 
         self.emb_dim = emb_dim
@@ -120,7 +117,7 @@ class ATTCluster(TorchModel):
 
     def predict(self, users_ids, items_ids):
         scores = self.forward(users_ids, items_ids)
-        return scores[:,0], scores[:,0]
+        return scores[:,0], scores[:,1]
 
     def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
