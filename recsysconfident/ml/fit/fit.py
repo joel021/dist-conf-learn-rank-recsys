@@ -2,6 +2,7 @@ import torch
 
 from recsysconfident.environment import Environment
 from recsysconfident.ml.fit.early_stopping import EarlyStopping
+from recsysconfident.ml.models.checkpoint_saver import load_checkpoint
 from recsysconfident.ml.models.torchmodel import TorchModel
 
 
@@ -25,10 +26,13 @@ def train_model(model: TorchModel, training_loader, validation_loader, environ: 
             "loss_fit": avg_loss,
             "loss_val": avg_vloss,
         })
-        if early_stopping.stop(avg_vloss, model):
+        if early_stopping.stop(avg_vloss, model, epoch):
             print("Early stopping triggered.")
             break
     model.load_state_dict(torch.load(environ.model_uri, weights_only=True, map_location=device))
+    load_checkpoint(model, environ.model_uri, device)
+
+    return history
 
     return history
 

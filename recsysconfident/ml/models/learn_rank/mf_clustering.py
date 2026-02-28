@@ -72,12 +72,13 @@ class ATTCluster(TorchModel):
         return l1
 
     def conf_cluster(self, emb_weight, W_emb, idx):
-        #W_emb, shape: (emb_dim, emb_dim)
         emb_weight = W_emb(emb_weight)
-        norm_embeddings = F.normalize(emb_weight, p=2, dim=1)  # Shape: (n_entities, emb_dim)
-        sim_matrix = torch.matmul(norm_embeddings[idx], norm_embeddings.T)  # Shape: (batch_size, n_entities)
-        similarity = F.softmax(sim_matrix, dim=1)  # Shape: (batch_size, n_entities)
-        att_embeddings = torch.matmul(similarity, emb_weight)  # Shape: (batch_size, emb_dim)
+
+        d = emb_weight.size(1)
+        sim_matrix = torch.matmul(emb_weight[idx], emb_weight.T) / math.sqrt(d)
+
+        similarity = F.softmax(sim_matrix, dim=1)
+        att_embeddings = torch.matmul(similarity, emb_weight)
 
         entropy = -(similarity * torch.log(similarity + 1e-8)).sum(dim=1)
         confidence = 1 - entropy / math.log(similarity.size(1))
@@ -97,19 +98,18 @@ class ATTCluster(TorchModel):
 
     def forward(self, users, items):
 
-        user_embedding = self.u_emb(users)
-        item_embedding = self.i_emb(items)
+        #user_embedding = self.u_emb(users)
+        #item_embedding = self.i_emb(items)
         user_bias = self.u_bias(users)
         item_bias = self.i_bias(items)
 
-        emb_product = user_embedding * item_embedding
+        #emb_product = user_embedding * item_embedding
 
         u_x, c_u = self.conf_cluster(self.u_emb.weight, self.w_u, users)
         i_x, c_i = self.conf_cluster(self.i_emb.weight, self.w_i, items)
 
         c_ui = torch.sqrt(c_u * c_i).squeeze()
-        x = self.dropout(torch.concat([u_x, i_x, emb_product], dim=1))
-        x = self.w_r(x) #before: u_x + i_x + emb_product
+        x = self.w_r(u_x + i_x)
 
         pred = (x.squeeze() + user_bias.squeeze() + item_bias.squeeze() + self.global_bias).squeeze()
 
@@ -131,4 +131,4 @@ class ATTCluster(TorchModel):
         return loss
 
     def regularization(self):
-        return self.l2_bias(self.w_x)
+        return 0

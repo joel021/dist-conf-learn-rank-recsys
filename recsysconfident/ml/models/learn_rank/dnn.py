@@ -18,64 +18,49 @@ def get_dnn_and_dl(info: DatasetInfo):
                 items_per_user = info.items_per_user)
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
-
 class Dnn(TorchModel):
 
     def __init__(self, n_users: int, n_items: int, emb_dim: int, items_per_user):
-        super(Dnn, self).__init__(items_per_user, None, n_items)
+        super(Dnn, self).__init__(items_per_user, None, n_users, n_items, emb_dim)
 
         self.n_users = n_users
+        self.n_items = n_items
         self.emb_dim = emb_dim
 
-        u_cols = get_n_bits(n_users+1)
-        i_cols = get_n_bits(n_items+1)
-        u_lookup = ((torch.arange(n_users).unsqueeze(1) & (1 << torch.arange(u_cols))) > 0).float()
-        i_lookup = ((torch.arange(n_items).unsqueeze(1) & (1 << torch.arange(i_cols))) > 0).float()
-        self.register_buffer('u_lookup', u_lookup)
-        self.register_buffer('i_lookup', i_lookup)
-
-        self.f_ui = nn.Linear(u_cols + i_cols, emb_dim)
-        self.f_2 = nn.Linear(self.emb_dim, emb_dim)
+        self.f_ui = nn.Linear(2 * emb_dim, emb_dim)
+        self.f_2 = nn.Linear(emb_dim, emb_dim)
         self.f_r = nn.Linear(emb_dim, 1)
 
-        # Initialize embeddings
-        nn.init.xavier_uniform(self.f_ui.weight)
-        nn.init.xavier_uniform(self.f_2.weight)
-        nn.init.xavier_uniform(self.f_r.weight)
+        nn.init.xavier_uniform_(self.f_ui.weight)
+        nn.init.xavier_uniform_(self.f_2.weight)
+        nn.init.xavier_uniform_(self.f_r.weight)
 
     def forward(self, u_idx, i_idx):
-        u_binary_encoded = self.u_lookup[u_idx]
-        i_binary_encoded = self.i_lookup[i_idx]
+        u_feat = self.user_emb(u_idx)
+        i_feat = self.item_emb(i_idx)
 
-        ui_binary_encoded = torch.concat([u_binary_encoded, i_binary_encoded], dim=1)
-        f_ui = torch.relu(self.f_ui(ui_binary_encoded))
+        ui_feat = torch.cat([u_feat, i_feat], dim=1)
+        f_ui = torch.relu(self.f_ui(ui_feat))
         f_2 = torch.relu(self.f_2(f_ui))
         pred = self.f_r(f_2)
 
         return torch.stack([pred, torch.zeros_like(pred)], dim=1)
 
     def l2(self, layer):
-        l2_loss = torch.norm(layer.weight, p=2) ** 2  # L2 norm squared for weights
-        return l2_loss
+        return torch.norm(layer.weight, p=2) ** 2
 
     def l2_bias(self, layer):
-        l2_loss = self.l2(layer)
-        l2_loss += torch.norm(layer.bias, p=2) ** 2
-        return l2_loss
+        return self.l2(layer) + torch.norm(layer.bias, p=2) ** 2
 
     def l1(self, layer):
-        l_loss = torch.sum(torch.abs(layer.weight))  # L1 norm (sum of absolute values)
-        return l_loss
+        return torch.sum(torch.abs(layer.weight))
 
     def l1_bias(self, layer):
-
-        l1 = self.l1(layer)
-        l1 += torch.sum(torch.abs(layer.bias))
-        return l1
+        return self.l1(layer) + torch.sum(torch.abs(layer.bias))
 
     def predict(self, users_ids, items_ids):
         scores = self.forward(users_ids, items_ids)
-        return scores[:,0], scores[:,0]
+        return scores[:, 0], self.embedding_instability(users_ids, items_ids)
 
     def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()
@@ -85,8 +70,7 @@ class Dnn(TorchModel):
         return loss
 
     def eval_loss(self, user_ids, item_ids):
-        loss = bpr_loss(self, user_ids, item_ids)
-        return loss
+        return bpr_loss(self, user_ids, item_ids)
 
     def regularization(self):
         return 0

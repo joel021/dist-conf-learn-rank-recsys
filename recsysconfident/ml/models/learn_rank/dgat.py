@@ -28,39 +28,33 @@ def get_dgat_model_and_dataloader(info: DatasetInfo):
 class DGAT(TorchModel):
 
     def __init__(self, items_per_user, n_users, n_items, emb_dim, rmin: float, rmax: float):
-        super().__init__(items_per_user, None, n_items)
+        super().__init__(items_per_user, None, n_users, n_items, emb_dim)
 
         self.n_users = n_users
         self.n_items = n_items
         self.rmin = rmin
         self.rmax = rmax
-        n_bins = int(2 * (rmax - rmin))
-        self.delta_s = 1 / n_bins
-
-        self.ui_lookup = nn.Embedding(n_users + n_items, emb_dim)
 
         self.ui_gat_layer = GATConv(in_channels=emb_dim,
-                                   out_channels=emb_dim,
-                                   heads=1,
-                                   concat=False
-                                   )
+                                    out_channels=emb_dim,
+                                    heads=1,
+                                    concat=False
+                                    )
         self.dropout = nn.Dropout(0.2)
         self.fc1 = nn.Linear(2 * emb_dim, emb_dim)
         self.fc2 = nn.Linear(emb_dim, 1)
 
-        nn.init.xavier_uniform(self.ui_lookup.weight)
 
     def forward(self, users_ids, items_ids):
+        ui_edges = torch.stack([users_ids, items_ids + self.n_users])
 
-        ui_edges = torch.stack([users_ids, items_ids + self.n_users]) #(batch,),(batch,) -> (2, batch)
+        ui_x = torch.cat([self.user_emb.weight, self.item_emb.weight], dim=0)
+        ui_graph_emb = self.ui_gat_layer(x=ui_x, edge_index=ui_edges)
 
-        ui_x = self.ui_lookup.weight
-        ui_graph_emb = self.ui_gat_layer(x=ui_x, edge_index=ui_edges)  # (max_u_id+1, emb_dim)
+        u_graph_emb = ui_graph_emb[users_ids]
+        i_graph_emb = ui_graph_emb[items_ids + self.n_users]
 
-        u_graph_emb = ui_graph_emb[ui_edges[0]]
-        i_graph_emb = ui_graph_emb[ui_edges[1]]
-
-        x = F.leaky_relu(self.fc1(torch.concat([u_graph_emb, i_graph_emb], dim=1)))
+        x = F.leaky_relu(self.fc1(torch.cat([u_graph_emb, i_graph_emb], dim=1)))
         x = self.dropout(x)
         mu = self.fc2(x)
 
@@ -74,14 +68,12 @@ class DGAT(TorchModel):
         return loss
 
     def eval_loss(self, user_ids, item_ids):
-        loss = bpr_loss(self, user_ids, item_ids)
-        return loss
+        return bpr_loss(self, user_ids, item_ids)
 
     def regularization(self):
         return 0
 
     def predict(self, user_ids, item_ids):
         scores = self.forward(user_ids, item_ids)
-
         mu = scores[:, 0]
-        return mu, torch.zeros_like(mu)
+        return mu, self.embedding_instability(user_ids, item_ids)

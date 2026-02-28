@@ -1,7 +1,7 @@
-from threading import Thread
-
 import torch
 import numpy as np
+
+from recsysconfident.ml.models.checkpoint_saver import save_checkpoint
 
 
 class EarlyStopping:
@@ -23,27 +23,30 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.path = path
 
-    def stop(self, val_loss, model) -> bool:
+    def stop(self, val_loss, model, epoch) -> bool:
         score = -val_loss
 
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, epoch)
         elif score <= self.best_score:
             self.counter += 1
             if self.verbose:
                 print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, epoch)
             self.counter = 0
 
         return self.counter >= self.patience
 
-    def save_checkpoint(self, val_loss, model):
-        """Saves model when validation loss decreases."""
+    def save_checkpoint(self, val_loss, model, epoch):
+
         if self.verbose:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
         torch.save(model.state_dict(), self.path)
         self.val_loss_min = val_loss
 
+        if hasattr(model, 'u_emb_ema'):
+            model.update_ema(beta=0.99)
+            save_checkpoint(model.u_emb_ema, model.i_emb_ema, epoch, self.path)
