@@ -48,8 +48,8 @@ class TorchModel(nn.Module):
         u_ref = self.u_emb_ema[u]
         i_ref = self.i_emb_ema[i]
 
-        v_u = F.cosine_similarity(self.user_emb(u), u_ref, dim=1)
-        v_i = F.cosine_similarity(self.item_emb(i), i_ref, dim=1)
+        v_u = (F.cosine_similarity(self.user_emb(u), u_ref, dim=1) + 1)/2
+        v_i = (F.cosine_similarity(self.item_emb(i), i_ref, dim=1) + 1)/2
 
         return v_u + v_i
 
