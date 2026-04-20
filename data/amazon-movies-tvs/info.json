@@ -7,6 +7,5 @@
   "interactions_file": "ratings_Movies_and_TV.csv",
   "sep": ",",
   "has_head": false,
-  "rate_range": [1, 5, 0.5],
-  "metadata_columns": null
+  "rate_range": [1, 5, 0.5]
 }
