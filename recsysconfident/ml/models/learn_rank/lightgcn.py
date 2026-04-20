@@ -12,7 +12,7 @@ from recsysconfident.ml.models.torchmodel import TorchModel
 from recsysconfident.ml.ranking.rank_helper import bpr_loss
 
 
-def get_lightgcn_conf_model_and_dataloader(info: DatasetInfo):
+def get_lightgcn_model_and_dataloader(info: DatasetInfo):
 
     fit_dataloader, eval_dataloader, test_dataloader = ui_ids_label(info)
 
@@ -21,6 +21,7 @@ def get_lightgcn_conf_model_and_dataloader(info: DatasetInfo):
     Graph = scipy_to_torch_sparse(norm_adj)
 
     model = LightGCN(
+        info.items_per_user,
                 Graph,
                 info.n_users,
                 info.n_items,
@@ -34,8 +35,9 @@ def get_lightgcn_conf_model_and_dataloader(info: DatasetInfo):
 
 class LightGCN(TorchModel):
 
-    def __init__(self, Graph, n_users:int, n_items:int, emb_dim:int, n_layers:int, keep_prob: float, A_split, rmin, rmax, dropout=True):
-        super(LightGCN, self).__init__()
+    def __init__(self, items_per_user, Graph, n_users:int, n_items:int, emb_dim:int, n_layers:int, keep_prob: float, A_split, rmin, rmax, dropout=True):
+        super(LightGCN, self).__init__(items_per_user, None, n_users, n_items, emb_dim)
+
         self.Graph = Graph
         self.rmax = rmax
         self.rmin = rmin
@@ -97,7 +99,6 @@ class LightGCN(TorchModel):
         users_emb = self.embedding_user.weight
         items_emb = self.embedding_item.weight
         all_emb = torch.cat([users_emb, items_emb])
-        #   torch.split(all_emb , [self.num_users, self.num_items])
         embs = [all_emb]
         if self.dropout:
             if self.training:

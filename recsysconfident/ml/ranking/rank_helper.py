@@ -19,7 +19,7 @@ def sample_unseen_item(seen: tuple, num_items: int, max_tries: int=20) -> int:
 
 def learn_to_rank_step(model: TorchModel, users_ids, high_rank_items):
 
-    low_rank_items_idx = get_low_rank_items(users_ids, model.items_per_user, model.n_items)
+    low_rank_items_idx = get_low_rank_items(users_ids, model.items_per_user, model.n_items-1)
     pos_scores = model(users_ids, high_rank_items)
     neg_scores = model(users_ids, low_rank_items_idx.to(users_ids.device))
 
