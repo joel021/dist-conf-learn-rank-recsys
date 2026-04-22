@@ -8,6 +8,8 @@ from recsysconfident.data_handling.datasets.csv_reader import CsvReader
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
 from recsysconfident.data_handling.datasets.jester_joke_reader import JesterJokeReader
 from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensReader
+from recsysconfident.ml.models.dropout_uncertainty import get_MCDropoutRecModel_and_dataloader
+from recsysconfident.ml.models.k_nearest_neighbors import get_knn_cosine_basic
 from recsysconfident.ml.models.learn_rank.lightgcn import get_lightgcn_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.ua_gat import get_uagat_model_and_dataloader
 
@@ -16,6 +18,7 @@ from recsysconfident.ml.models.learn_rank.dgat import get_dgat_model_and_dataloa
 from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_mf_model_and_dl
+from recsysconfident.ml.multivaeracmodel import get_multivae_m_dl
 
 
 class Environment:
@@ -96,6 +99,9 @@ class Environment:
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
             "dnn": get_dnn_and_dl,
             "lightgcn": get_lightgcn_model_and_dataloader,
+            "multvae": get_multivae_m_dl,
+            "dropout": get_MCDropoutRecModel_and_dataloader,
+            "knn": get_knn_cosine_basic
         }
 
         if not self.database_name in self.database_name_fn:

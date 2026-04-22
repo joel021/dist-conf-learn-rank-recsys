@@ -113,7 +113,6 @@ class DatasetInfo:
 
         return self
 
-
     def _get_user_item_sets(self, df: DataFrame) -> Dict:
         """
         Computes a dictionary mapping users to their rated items and relevance scores.
@@ -124,8 +123,6 @@ class DatasetInfo:
             .to_dict()
         )
         return user_item_dict
-
-    # --- Public Accessors/Getters ---
 
     def get_splits(self) -> Tuple[Optional[DataFrame], Optional[DataFrame], Optional[DataFrame]]:
         """
