@@ -1,8 +1,6 @@
 import torch
 import numpy as np
 
-from recsysconfident.ml.models.checkpoint_saver import save_checkpoint
-
 
 class EarlyStopping:
     """Early stopping to stop training when the validation loss doesn't improve after a certain patience."""
@@ -46,7 +44,3 @@ class EarlyStopping:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
         torch.save(model.state_dict(), self.path)
         self.val_loss_min = val_loss
-
-        if hasattr(model, 'u_emb_ema'):
-            model.update_ema(beta=0.99)
-            save_checkpoint(model.u_emb_ema, model.i_emb_ema, epoch, self.path)

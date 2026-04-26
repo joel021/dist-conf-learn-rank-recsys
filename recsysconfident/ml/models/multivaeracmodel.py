@@ -12,7 +12,8 @@ def get_multivae_m_dl(info: DatasetInfo):
     fit_dataloader, eval_dataloader, test_dataloader = ui_ids_label(info)
 
     model = MultVAERecModel(
-        fit_df = info.fit_df,
+        items_per_user=info.items_per_user,
+        n_users=info.n_users,
         n_items=info.n_items,
         hidden_dim=64,
         latent_dim=64
@@ -25,7 +26,8 @@ class MultVAERecModel(TorchModel):
 
     def __init__(
         self,
-        fit_df,
+        items_per_user,
+        n_users,
         n_items,
         hidden_dim=600,
         latent_dim=200,
@@ -33,8 +35,8 @@ class MultVAERecModel(TorchModel):
         beta=0.2,
         mc_samples=50
     ):
-        super().__init__(None)
-        self.fit_df = fit_df
+        super().__init__(items_per_user=items_per_user, items=None, n_users=n_users, n_items=n_items, emb_size=hidden_dim)
+
         self.n_items = n_items
         self.beta = beta
         self.mc_samples = mc_samples
@@ -103,7 +105,7 @@ class MultVAERecModel(TorchModel):
         for i, u in enumerate(users):
             user_items = self.items_per_user.get(int(u), ([], None))[0]
             if len(user_items) > 0:
-                x[i, user_items] = 1.0
+                x[i, list(user_items)] = 1.0
         
         return x
 
@@ -121,14 +123,16 @@ class MultVAERecModel(TorchModel):
         preds = torch.cat(preds, dim=0)  # [S, B, n_items]
 
         mean = preds.mean(dim=0)
-        var = preds.var(dim=0)
+        std = preds.std(dim=0)
 
-        if items is not None:
-            return mean[:, items], var[:, items]
+        idx = torch.arange(len(items))
+        mean_ = mean[idx, items]
+        std_ = std[idx, items]
 
-        return mean, var
+        certainty = 1 / (1.0 + std_)
+        return mean_, certainty
 
-    def eval_loss(self, user_ids, item_ids, labels):
+    def eval_loss(self, user_ids, item_ids):
         """
         labels: same shape as x (multi-hot or counts)
         Deterministic (use mean of posterior)
@@ -149,10 +153,7 @@ class MultVAERecModel(TorchModel):
 
         return loss
 
-    def loss(self, user_ids, item_ids, labels, optimizer):
-        """
-        labels: [B, n_items] multi-hot interaction vector
-        """
+    def loss(self, user_ids, item_ids, optimizer):
 
         self.train()
         x = self._build_x(user_ids)

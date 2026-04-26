@@ -4,7 +4,6 @@ import torch.nn.functional as F
 
 from recsysconfident.data_handling.dataloader.int_ui_ids_dataloader import ui_ids_label
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
-from recsysconfident.ml.models.torchmodel import TorchModel
 from recsysconfident.ml.ranking.rank_helper import bpr_loss
 
 
@@ -22,7 +21,7 @@ def get_MCDropoutRecModel_and_dataloader(info: DatasetInfo):
 
     return model, fit_dataloader, eval_dataloader, test_dataloader
 
-class MCDropoutRecModel(TorchModel):
+class MCDropoutRecModel(nn.Module):
 
     def __init__(
         self,
@@ -35,7 +34,10 @@ class MCDropoutRecModel(TorchModel):
         l2_reg=1e-6,
         mc_samples=50,
     ):
-        super().__init__(items_per_user)
+        super(MCDropoutRecModel, self).__init__()
+        self.items_per_user = items_per_user
+        self.n_users = n_users
+        self.n_items = n_items
 
         self.user_emb = nn.Embedding(n_users, emb_dim)
         self.item_emb = nn.Embedding(n_items, emb_dim)
@@ -70,11 +72,6 @@ class MCDropoutRecModel(TorchModel):
             reg += torch.sum(param ** 2)
         return self.l2_reg * reg
 
-    def _predict_point(self, user_ids, item_ids):
-        self.eval()
-        with torch.no_grad():
-            return self.forward(user_ids, item_ids)
-        
     def _enable_dropout(self):
         for m in self.modules():
             if isinstance(m, nn.Dropout):
@@ -86,8 +83,6 @@ class MCDropoutRecModel(TorchModel):
             mean: [B] (denormalized)
             certainty: [B]
         """
-
-        self.eval()
         self._enable_dropout()
 
         preds = []
@@ -98,31 +93,28 @@ class MCDropoutRecModel(TorchModel):
         preds = torch.stack(preds, dim=0)
 
         mean = preds.mean(dim=0)
-        var = preds.std(dim=0)
+        std = preds.std(dim=0)
 
-        certainty = 1.0 / (var + 1.0)
+        certainty = 1.0 / (std + 1.0)
 
         return mean, certainty
     
-    def eval_loss(self, user_ids, item_ids, labels):
+    def eval_loss(self, user_ids, item_ids):
         """
         Deterministic evaluation (normalized space)
         """
 
-        labels_norm = self._normalize(labels)
+        bprloss = bpr_loss(self, user_ids, item_ids)
 
-        preds = self._predict_point(user_ids, item_ids)
-
-        loss = F.mse_loss(preds[:, 0], labels_norm, reduction="mean")
-        return loss
+        return bprloss
     
-    def loss(self, user_ids, item_ids, labels, optimizer):
+    def loss(self, user_ids, item_ids, optimizer):
 
         optimizer.zero_grad()
-        bpr_loss = bpr_loss(self, user_ids, item_ids)
+        bprloss = bpr_loss(self, user_ids, item_ids)
         reg = self.regularization()
 
-        loss = bpr_loss + reg
+        loss = bprloss + reg
 
         loss.backward()
         optimizer.step()

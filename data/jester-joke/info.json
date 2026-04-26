@@ -4,5 +4,6 @@
   "rating_col": "rating",
   "columns": ["userId", "itemId", "rating"],
   "interactions_file": "ratings.csv",
-  "rate_range": [-10, 10, 0.5]
+  "rate_range": [-10, 10, 0.5],
+  "metadata_columns": null
 }

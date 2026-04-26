@@ -30,9 +30,6 @@ def train_model(model: TorchModel, training_loader, validation_loader, environ: 
             print("Early stopping triggered.")
             break
     model.load_state_dict(torch.load(environ.model_uri, weights_only=True, map_location=device))
-    load_checkpoint(model, environ.model_uri, device)
-
-    return history
 
     return history
 

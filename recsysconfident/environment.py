@@ -18,7 +18,7 @@ from recsysconfident.ml.models.learn_rank.dgat import get_dgat_model_and_dataloa
 from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_mf_model_and_dl
-from recsysconfident.ml.multivaeracmodel import get_multivae_m_dl
+from recsysconfident.ml.models.multivaeracmodel import get_multivae_m_dl
 
 
 class Environment:
